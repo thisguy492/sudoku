@@ -19,89 +19,150 @@
     const ctx = canvas.getContext("2d");
     canvas.height = canvas.width;
 
-    size =2
+    size = 2
     step = canvas.width/(size**2)
     h = canvas.height
     w = canvas.width
 
     digits = []
-    board = []
     Variables = {}
     Constraints = {}
-    for(let i = 0; i<size**2; i++){
-        digits.push(i+1)
-    }
     all_contraints = []
+    //make digits and constraints
     for(let i =0; i<size**2; i++){
+        digits.push(i+1)
         for(let j =0; j<size**2; j++){
             if(i==j){continue}
             all_contraints.push([i+1,j+1])
         }
     }
 
-   for(let j = 0; j < size**2; j++){
-        for(let starti = 0; starti < size**2 -1; starti++){
-            for(let endi=starti+1; endi< size**2; endi++){
-                var1  = 'C'+JSON.stringify(starti+1)+JSON.stringify(j+1)
-                var2 ='C'+JSON.stringify(endi+1)+JSON.stringify(j+1)
-                constraint_key = var1+'-'+var2
-                Constraints[constraint_key] = all_contraints
+    function Pals(x_in,y_in){
+        pals = []
+        for(let x = x_in+1; x < size**2; x++){
+            pals.push([x+1,y_in+1])
+        }
+        for(let y = y_in+1; y < size**2; y++){
+            pals.push([x_in+1,y+1])
+        }
+        xstart = Math.floor(x_in/size)*size
+        ystart = Math.floor(y_in/size)*size
+        for(let x = 0; x < size; x++){
+            for(let y = 0; y < size; y++){
+                if(xstart+x>x_in || xstart+x==x_in && ystart+y>y_in){
+                    pals.push([xstart+x+1,ystart+y+1])
+                }
+                
             }
         }
+        return pals
     }
-    for(let i = 0; i < size**2; i++){
-        for(let startj = 0; startj < size**2 -1; startj++){
-            for(let endj=startj+1; endj< size**2; endj++){
-                var1  = 'C'+JSON.stringify(i+1)+JSON.stringify(startj+1)
-                var2 ='C'+JSON.stringify(i+1)+JSON.stringify(endj+1)
-                constraint_key = var1+'-'+var2
-                Constraints[constraint_key] = all_contraints
-            }
+    //make all pals list
+    all_pals = {}
+    for (let i = 0; i < size**2; i++) {
+        for (let j = 0; j < size**2; j++) {
+            var_name = '['+JSON.stringify(i+1)+','+JSON.stringify(j+1)+']'
+            Variables[var_name] = digits
+            all_pals[[i+1,j+1]] = Pals(i,j)
         }
     }
-
-    for(let i = 0; i<size**2; i+=2){
-        for(let j=0; j<size**2; j+=2){
-            console.log(i)
-            var1  = 'C'+JSON.stringify(i+1)+JSON.stringify(j+1)
-            var2  = 'C'+JSON.stringify(i+2)+JSON.stringify(j+2)
-            constraint_key = var1+'-'+var2
+    //turn all pals list into contraints thing
+    for (let var1 in all_pals) {
+        for(let i = 0; i < all_pals[var1].length; i++){
+            var2 = all_pals[var1][i]
+            constraint_key = JSON.stringify(JSON.parse('['+var1+']'))+JSON.stringify(var2)
             Constraints[constraint_key] = all_contraints
         }
     }
-    
-  
     console.log(Constraints)
+    console.log(Variables)
+    function UpdateBoard(Variables){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < size**2; i++) {
+            for (let j = 0; j < size**2; j++) {
+                var_name = '['+JSON.stringify(i+1)+','+JSON.stringify(j+1)+']'
+                domain = Variables[var_name]
+                all_pals[[i+1,j+1]] = Pals(i,j)
 
-    ctx.fillStyle = "red";
-    ctx.strokeStyle = "black";
 
-    for (let i = 0; i < size**2; i++) {
-        board.push([])
-        for (let j = 0; j < size**2; j++) {
-            var_name = 'C'+JSON.stringify(i+1)+JSON.stringify(j+1)
-            Variables[var_name] = digits
+                x = i*step
+                y = j*step
+                if(j%size==0 && i%size==0){
+                    ctx.lineWidth = 5;
+                }else{
+                    ctx.lineWidth = 1;
+                }
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+                if(domain.length == 1){
+                    text =JSON.stringify(domain[0])
+                    //later we can make the font size vary with the canvas size
+                    ctx.font = "50px Arial";
+                    ctx.fillText(text, x+.35*step, y+.65*step);
+                }
 
-            board[i].push(digits)
-            x = i*step
-            y = j*step
-            if(j%size==0 && i%size==0){
-                ctx.lineWidth = 5;
-            }else{
-                ctx.lineWidth = 1;
             }
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, h);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(w, y);
-            ctx.stroke();
         }
     }
-    console.log(Variables)
+   
+    UpdateBoard(Variables)
+    function revise(Constraints,Variables,var1,var2){
+        return_value = false
+        try{
+            constraint_list = Constraints[var1+var2]
+            //next line is there to make in err so we can go to the catch
+            constraint_list.length
+        }catch{
+            const temp = var1
+            var1 = var2
+            var2 = temp
+            constraint_list = JSON.parse(JSON.stringify(Constraints[var1+var2]))
+        }
+        //now when we say var1 we always mean the first one
 
+        //get rid of constraints that are't valid cause var2 dont have the va in its domain
+        for(let i = 0; i < constraint_list.length; i++){
+            if(Variables[var2].indexOf(constraint_list[i][1]) == -1){
+                //we don't delete it now cause then the numbering gets weird in the for loop
+                constraint_list[i] = 'DELETE'
+            }
+        }
+        constraint_list = constraint_list.filter((el) => el != "DELETE")
+        Constraints[var1+var2] = constraint_list
+
+
+        //delete number from var1 domain if tht number does not have an asscioated constraint
+        domain1 = JSON.parse(JSON.stringify(Variables[var1]))
+        for(let i = 0; i < domain1.length; i++){
+            delete_this_option = true
+            for(let j = 0; j < constraint_list.length; j++){
+                if(domain1[i] == constraint_list[j][0]){
+                    delete_this_option = false
+                }
+            }
+            if(delete_this_option){
+                return_value = true
+                domain1[i] = 'DELETE'
+            }
+        }
+        domain1 = domain1.filter((el) => el != "DELETE")
+        Variables[var1] = domain1
+
+        return return_value
+    }
+
+
+    Variables['[1,1]'] = [1]
+    Variables['[2,2]'] = [2]
+    Variables['[3,3]'] = [3]
+    Variables['[4,4]'] = [4]
+    UpdateBoard(Variables)
 </script>
 </body>
 </html>
