@@ -37,7 +37,7 @@
         }
     }
 
-    function Pals(x_in,y_in){
+    function LargerPals(x_in,y_in){
         pals = []
         for(let x = x_in+1; x < size**2; x++){
             pals.push([x+1,y_in+1])
@@ -57,23 +57,38 @@
         }
         return pals
     }
-    //make all pals list
-    all_pals = {}
+    function AllPals(x_in,y_in){
+        pals = []
+        for(let x = 0; x < size**2; x++){
+            pals.push([x+1,y_in+1])
+        }
+        for(let y = 0; y < size**2; y++){
+            pals.push([x_in+1,y+1])
+        }
+        xstart = Math.floor(x_in/size)*size
+        ystart = Math.floor(y_in/size)*size
+        for(let x = 0; x < size; x++){
+            for(let y = 0; y < size; y++){
+                    pals.push([xstart+x+1,ystart+y+1])
+            }
+        }
+        return pals
+    }
+
     for (let i = 0; i < size**2; i++) {
         for (let j = 0; j < size**2; j++) {
             var_name = '['+JSON.stringify(i+1)+','+JSON.stringify(j+1)+']'
             Variables[var_name] = digits
-            all_pals[[i+1,j+1]] = Pals(i,j)
+            pals = LargerPals(i,j)
+
+            pals.forEach(pal =>{
+                v2 = '['+JSON.stringify(pal[0])+','+JSON.stringify(pal[1])+']'
+                Constraints[var_name+'-'+v2] = all_contraints
+            })
+
         }
     }
-    //turn all pals list into contraints thing
-    for (let var1 in all_pals) {
-        for(let i = 0; i < all_pals[var1].length; i++){
-            var2 = all_pals[var1][i]
-            constraint_key = JSON.stringify(JSON.parse('['+var1+']'))+JSON.stringify(var2)
-            Constraints[constraint_key] = all_contraints
-        }
-    }
+
     console.log(Constraints)
     console.log(Variables)
     function UpdateBoard(Variables){
@@ -82,7 +97,6 @@
             for (let j = 0; j < size**2; j++) {
                 var_name = '['+JSON.stringify(i+1)+','+JSON.stringify(j+1)+']'
                 domain = Variables[var_name]
-                all_pals[[i+1,j+1]] = Pals(i,j)
 
 
                 x = i*step
@@ -115,20 +129,23 @@
     function revise(Constraints,Variables,var1,var2){
         return_value = false
         try{
-            constraint_list = Constraints[var1+var2]
+            ordered = true
+            constraint_list = JSON.parse(JSON.stringify(Constraints[var1+'-'+var2]))
             //next line is there to make in err so we can go to the catch
             constraint_list.length
         }catch{
+            ordered = false
             const temp = var1
             var1 = var2
             var2 = temp
-            constraint_list = JSON.parse(JSON.stringify(Constraints[var1+var2]))
+            constraint_list = JSON.parse(JSON.stringify(Constraints[var1+'-'+var2]))
         }
         //now when we say var1 we always mean the first one
-
+        Vars = [var1,var2]
+        k = Math.round(ordered)
         //get rid of constraints that are't valid cause var2 dont have the va in its domain
         for(let i = 0; i < constraint_list.length; i++){
-            if(Variables[var2].indexOf(constraint_list[i][1]) == -1){
+            if(Variables[Vars[k]].indexOf(constraint_list[i][k]) == -1){
                 //we don't delete it now cause then the numbering gets weird in the for loop
                 constraint_list[i] = 'DELETE'
             }
@@ -138,31 +155,63 @@
 
 
         //delete number from var1 domain if tht number does not have an asscioated constraint
-        domain1 = JSON.parse(JSON.stringify(Variables[var1]))
-        for(let i = 0; i < domain1.length; i++){
+        k = Math.round(!ordered)
+        domain = JSON.parse(JSON.stringify(Variables[Vars[k]]))
+        for(let i = 0; i < domain.length; i++){
             delete_this_option = true
             for(let j = 0; j < constraint_list.length; j++){
-                if(domain1[i] == constraint_list[j][0]){
+                if(domain[i] == constraint_list[j][k]){
                     delete_this_option = false
                 }
             }
             if(delete_this_option){
                 return_value = true
-                domain1[i] = 'DELETE'
+                domain[i] = 'DELETE'
             }
         }
-        domain1 = domain1.filter((el) => el != "DELETE")
-        Variables[var1] = domain1
+        domain = domain.filter((el) => el != "DELETE")
+        Variables[Vars[k]] = domain
+        
 
         return return_value
     }
+    function AC3(CSP,Variables){
+        pairs = Object.keys(CSP)
+        checklist = []
+        pairs.forEach(pair =>{
+            pair = pair.split('-')
+            checklist.push(pair)
+        })
+        while(checklist.length > 0){
+            [v1,v2] = checklist[0]
+            checklist.shift()
+            if(revise(CSP,Variables,v1,v2)){
+                i = JSON.parse(v1.split(',')[0])-1
+                j = JSON.parse(v1.split(',')[1])-1
+                pals = AllPals(i,j)
+                //now properly add pals to checklist, and make sure things arent pals with themselves
+            }
+            [v2,v1] = checklist[0]
+            checklist.shift()
+            if(revise(CSP,Variables,v1,v2)){
+                i = JSON.parse(v1.split(',')[0])-1
+                j = JSON.parse(v1.split(',')[1])-1
+                pals = AllPals(i,j)
+                //now properly add pals to checklist, and make sure things arent pals with themselves
+            }
+        }
+
+    }
 
 
-    Variables['[1,1]'] = [1]
+    //Variables['[1,1]'] = [1]
     Variables['[2,2]'] = [2]
-    Variables['[3,3]'] = [3]
-    Variables['[4,4]'] = [4]
+    //Variables['[3,3]'] = [3]
+    //Variables['[4,4]'] = [4]
+    revise(Constraints,Variables,'[1,1]','[2,2]')
+    AC3(Constraints,Variables)
     UpdateBoard(Variables)
+    console.log(Variables)
 </script>
 </body>
 </html>
