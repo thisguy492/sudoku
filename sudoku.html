@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%;">
+   
+    <style>
+        body{
+            text-align: center;
+        }
+        img{
+            width: auto;
+        }
+    </style>
+<body>
+   
+<canvas id="myCanvas" width="400" height="400" style="border:1px solid grey"></canvas>
+
+
+<script>
+    const canvas = document.getElementById("myCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.height = canvas.width;
+
+    size =2
+    step = canvas.width/(size**2)
+    h = canvas.height
+    w = canvas.width
+
+    digits = []
+    board = []
+    Variables = {}
+    Constraints = {}
+    for(let i = 0; i<size**2; i++){
+        digits.push(i+1)
+    }
+    all_contraints = []
+    for(let i =0; i<size**2; i++){
+        for(let j =0; j<size**2; j++){
+            if(i==j){continue}
+            all_contraints.push([i+1,j+1])
+        }
+    }
+
+   for(let j = 0; j < size**2; j++){
+        for(let starti = 0; starti < size**2 -1; starti++){
+            for(let endi=starti+1; endi< size**2; endi++){
+                var1  = 'C'+JSON.stringify(starti+1)+JSON.stringify(j+1)
+                var2 ='C'+JSON.stringify(endi+1)+JSON.stringify(j+1)
+                constraint_key = var1+'-'+var2
+                Constraints[constraint_key] = all_contraints
+            }
+        }
+    }
+    for(let i = 0; i < size**2; i++){
+        for(let startj = 0; startj < size**2 -1; startj++){
+            for(let endj=startj+1; endj< size**2; endj++){
+                var1  = 'C'+JSON.stringify(i+1)+JSON.stringify(startj+1)
+                var2 ='C'+JSON.stringify(i+1)+JSON.stringify(endj+1)
+                constraint_key = var1+'-'+var2
+                Constraints[constraint_key] = all_contraints
+            }
+        }
+    }
+
+    for(let i = 0; i<size**2; i+=2){
+        for(let j=0; j<size**2; j+=2){
+            console.log(i)
+            var1  = 'C'+JSON.stringify(i+1)+JSON.stringify(j+1)
+            var2  = 'C'+JSON.stringify(i+2)+JSON.stringify(j+2)
+            constraint_key = var1+'-'+var2
+            Constraints[constraint_key] = all_contraints
+        }
+    }
+    
+  
+    console.log(Constraints)
+
+    ctx.fillStyle = "red";
+    ctx.strokeStyle = "black";
+
+    for (let i = 0; i < size**2; i++) {
+        board.push([])
+        for (let j = 0; j < size**2; j++) {
+            var_name = 'C'+JSON.stringify(i+1)+JSON.stringify(j+1)
+            Variables[var_name] = digits
+
+            board[i].push(digits)
+            x = i*step
+            y = j*step
+            if(j%size==0 && i%size==0){
+                ctx.lineWidth = 5;
+            }else{
+                ctx.lineWidth = 1;
+            }
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+        }
+    }
+    console.log(Variables)
+
+</script>
+</body>
+</html>
