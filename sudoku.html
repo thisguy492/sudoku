@@ -212,7 +212,19 @@
         }
 
     }
-
+    function minimum_remaining_values(CSP,Variables){
+        Var_names = Object.keys(Variables)
+        all_lengths = {}
+        for (let i = 0; i < Var_names.length; i++) {
+            this_length = Variables[Var_names[i]].length
+            if( this_length != 1){
+                all_lengths[this_length] = Var_names[i]
+            }
+        }
+        min_l = Math.min(...Object.keys(all_lengths))
+        min_V = all_lengths[min_l]
+        return min_V
+    }
 
     //Variables['[1,1]'] = [1]
     Variables['[2,2]'] = [2]
@@ -221,6 +233,8 @@
     revise(Constraints,Variables,'[1,1]','[2,2]')
     AC3(Constraints,Variables)
     UpdateBoard(Variables)
+    a =minimum_remaining_values(Constraints,Variables)
+    console.log(a)
     console.log(Variables)
 </script>
 </body>
