@@ -89,8 +89,7 @@
         }
     }
 
-    console.log(Constraints)
-    console.log(Variables)
+ 
     function UpdateBoard(Variables){
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let i = 0; i < size**2; i++) {
@@ -118,7 +117,12 @@
                     text =JSON.stringify(domain[0])
                     //later we can make the font size vary with the canvas size
                     ctx.font = "50px Arial";
-                    ctx.fillText(text, x+.35*step, y+.65*step);
+                    ctx.fillText(text, x+(.35*step), y+(.65*step));
+                }else{
+                    text = JSON.stringify(domain)
+                    //later we can make the font size vary with the canvas size
+                    ctx.font = "10px Arial";
+                    ctx.fillText(text, x+(.3*step), y+(.5*step));
                 }
 
             }
@@ -127,6 +131,7 @@
    
     UpdateBoard(Variables)
     function revise(Constraints,Variables,var1,var2){
+        if (var1==var2){return false}
         return_value = false
         try{
             ordered = true
@@ -151,7 +156,7 @@
             }
         }
         constraint_list = constraint_list.filter((el) => el != "DELETE")
-        Constraints[var1+var2] = constraint_list
+        Constraints[var1+'-'+var2] = constraint_list
 
 
         //delete number from var1 domain if tht number does not have an asscioated constraint
@@ -175,6 +180,21 @@
 
         return return_value
     }
+    function AddToList(v1,v2,checklist){
+        
+                var1 = v1.slice(1,v1.length-1)
+                var1 = var1.split(',')
+                i = JSON.parse(var1[0])-1
+                j = JSON.parse(var1[1])-1
+                pals = AllPals(i,j)
+                for(let i = 0; i < pals.length; i++){
+                    var_name = '['+JSON.stringify(pals[i][0])+','+JSON.stringify(pals[i][1])+']'
+                    checklist.push([v1,var_name])
+                }
+                //now properly add pals to checklist, and make sure things arent pals with themselves
+        
+        return checklist
+    }
     function AC3(CSP,Variables){
         pairs = Object.keys(CSP)
         checklist = []
@@ -182,23 +202,13 @@
             pair = pair.split('-')
             checklist.push(pair)
         })
+
         while(checklist.length > 0){
-            [v1,v2] = checklist[0]
-            checklist.shift()
-            if(revise(CSP,Variables,v1,v2)){
-                i = JSON.parse(v1.split(',')[0])-1
-                j = JSON.parse(v1.split(',')[1])-1
-                pals = AllPals(i,j)
-                //now properly add pals to checklist, and make sure things arent pals with themselves
-            }
-            [v2,v1] = checklist[0]
-            checklist.shift()
-            if(revise(CSP,Variables,v1,v2)){
-                i = JSON.parse(v1.split(',')[0])-1
-                j = JSON.parse(v1.split(',')[1])-1
-                pals = AllPals(i,j)
-                //now properly add pals to checklist, and make sure things arent pals with themselves
-            }
+            [v1,v2] = checklist[0];
+            if(revise(CSP,Variables,v1,v2)){checklist = AddToList(v1,v2,checklist);}
+            [v2,v1] = checklist[0];
+            if(revise(CSP,Variables,v1,v2)){checklist = AddToList(v1,v2,checklist);}
+            checklist.shift();
         }
 
     }
