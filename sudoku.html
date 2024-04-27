@@ -2,28 +2,32 @@
 <html lang="en" style="height: 100%;">
    
     <style>
-        body{
+        html,body{
+            height: 100%;
+            width: 100%;
+            margin: 0px;
             text-align: center;
         }
-        img{
-            width: auto;
-        }
+        
     </style>
-<body>
+<h1>Sudoku!</h1>
+<body onkeydown="Press(event)" style="height: 100%;">
    
-<canvas id="myCanvas" width="400" height="400" style="border:1px solid grey"></canvas>
+<canvas id="myCanvas" width="400" height="100%" style="border:1px solid grey" onclick="Click(event)"></canvas>
 
 
 <script>
     const canvas = document.getElementById("myCanvas");
     const ctx = canvas.getContext("2d");
-    canvas.height = canvas.width;
+    canvas.height = window.innerHeight*.9;
+    canvas.width = canvas.height;
 
     size = 3
     step = canvas.width/(size**2)
     h = canvas.height
     w = canvas.width
     text_size = canvas.width/4
+    mouse_pos = []
 
     digits = []
     Variables = {}
@@ -118,14 +122,19 @@
                     text =JSON.stringify(domain[0])
                     ctx.font = JSON.stringify(text_size/size)+'px Arial';
                     ctx.fillText(text, x+(.15*step), y+(.65*step));
-                }else{
-                    text = JSON.stringify(domain)
-                    ctx.font = JSON.stringify(text_size/(6*size))+'px Arial';
-                    ctx.fillText(text, x+(.1*step), y+(.5*step));
                 }
 
             }
         }
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(w, 0);
+        ctx.lineTo(w, h);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(w, h);
+        ctx.stroke();
     }
    
     UpdateBoard(Variables)
@@ -296,14 +305,58 @@
         return [targets,guess_numbs,guesses]
     }
 
-    Variables['[1,1]'] = [5]
-    Variables['[2,2]'] = [2]
-    Variables['[3,3]'] = [3]
-    Variables['[4,4]'] = [4]
-    
-    AC3(Constraints,Variables);
-    [Variables,targets,track_domain] = Solve(Constraints, Variables);
+
     UpdateBoard(Variables);
+    function Click(evt){
+        var rect = canvas.getBoundingClientRect();
+        UpdateBoard(Variables)
+        x= (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width
+        y= (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+        i = Math.floor(x/step)
+        j = Math.floor(y/step)
+        mouse_pos = [i+1,j+1]
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect(i*step,j*step,step,step);
+        ctx.globalAlpha = 1.0;
+    }
+    function Press(e){
+        console.log(e)
+        pos = JSON.stringify(mouse_pos)
+        try{
+            numb = JSON.parse(e.key)
+            if(Variables[pos].length > 1){
+                Variables[pos] = [numb]
+            }else{
+                Variables[pos][0] = Variables[pos][0]*10+numb
+            }
+           
+        }catch{
+            if(e.key == 'Backspace'){
+                console.log(Variables[pos])
+                if(Variables[pos].length == 1){
+                    console.log(Variables[pos][0]/10)
+                    Variables[pos][0] = Math.floor(Variables[pos][0]/10)
+                    if(Variables[pos][0] == 0){
+                        Variables[pos] = digits
+                    }
+                }
+            }
+            if(e.key == 'Enter'){
+                Solve(Constraints,Variables)
+            }
+            if(e.key == 'ArrowUp'){
+                size++
+            }
+            if(e.key == 'ArrowDown'){
+                size += -1
+            }
+            step = canvas.width/(size**2)
+        }
+        UpdateBoard(Variables)
+        ctx.globalAlpha = 0.2;
+        ctx.fillRect((mouse_pos[0]-1)*step,(mouse_pos[1]-1)*step,step,step);
+        ctx.globalAlpha = 1.0;
+    }
 
     console.log(Variables)
 </script>
