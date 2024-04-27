@@ -19,10 +19,11 @@
     const ctx = canvas.getContext("2d");
     canvas.height = canvas.width;
 
-    size = 2
+    size = 3
     step = canvas.width/(size**2)
     h = canvas.height
     w = canvas.width
+    text_size = canvas.width/4
 
     digits = []
     Variables = {}
@@ -115,14 +116,12 @@
                 ctx.stroke();
                 if(domain.length == 1){
                     text =JSON.stringify(domain[0])
-                    //later we can make the font size vary with the canvas size
-                    ctx.font = "50px Arial";
-                    ctx.fillText(text, x+(.35*step), y+(.65*step));
+                    ctx.font = JSON.stringify(text_size/size)+'px Arial';
+                    ctx.fillText(text, x+(.15*step), y+(.65*step));
                 }else{
                     text = JSON.stringify(domain)
-                    //later we can make the font size vary with the canvas size
-                    ctx.font = "10px Arial";
-                    ctx.fillText(text, x+(.3*step), y+(.5*step));
+                    ctx.font = JSON.stringify(text_size/(6*size))+'px Arial';
+                    ctx.fillText(text, x+(.1*step), y+(.5*step));
                 }
 
             }
@@ -225,16 +224,87 @@
         min_V = all_lengths[min_l]
         return min_V
     }
+    function Solve(Constraints,Variables){
 
-    //Variables['[1,1]'] = [1]
+        targets = []
+        guesses = []
+        guess_numbs = []
+        track_domain = [structuredClone(Variables)]
+
+        tot_length = 0
+        Object.values(Variables).forEach(val => {
+            tot_length += val.length
+        });
+        while(tot_length > size**4){
+
+            guess_numbs.push(0)
+            targets.push(minimum_remaining_values(Constraints,Variables))
+
+            Last_Constraints = structuredClone(Constraints)
+            Last_Variables = structuredClone(Variables)
+            guesses.push(Variables[targets[targets.length-1]][guess_numbs[guess_numbs.length-1]])
+            Variables[targets[targets.length-1]] = [guesses[guesses.length-1]]
+            AC3(Constraints,Variables)      
+            track_domain.push(structuredClone(Variables))      
+
+            tot_length = 0
+            for(let i = 0; i < Object.values(Variables).length; i++){
+                val = Object.values(Variables)[i]
+                //console.log(val.length)
+                if(val.length == 0){
+                    console.log('Found prob')
+                    Variables = structuredClone(Last_Variables)
+                    Constraints = structuredClone(Last_Constraints)
+                    guess_numbs[guess_numbs.length-1]++
+
+                    if(guess_numbs[guess_numbs.length-1] >= Variables[targets[targets.length-1]].length){
+                        BackTrack(targets,guess_numbs,guesses,Variables)
+                    }
+                    guesses.pop()
+                    track_domain.pop()
+                    guesses.push(Variables[targets[targets.length-1]][guess_numbs[guess_numbs.length-1]])
+                    Variables[targets[targets.length-1]] = [guesses[guesses.length-1]]
+                    AC3(Constraints,Variables)
+                    track_domain.push(structuredClone(Variables))  
+                    tot_length = Infinity
+                    break
+                }
+                tot_length += val.length
+            }
+            if(tot_length == size**4){
+                return [Variables, targets,track_domain]
+            }
+            
+        }
+
+    }
+    function BackTrack(targets,guess_numbs,guesses,Variables){
+        if(guess_numbs[guess_numbs.length-1] >= Variables[targets[targets.length-1]].length){
+            targets.pop()
+            guess_numbs.pop()
+            guesses.pop()
+            guess_numbs[guess_numbs.length-1]++
+            /*
+            console.log(guess_numbs[guess_numbs.length-1])
+            console.log(Variables[targets[targets.length-1]])
+            console.log(targets)
+            */
+            if(guess_numbs[guess_numbs.length-1] >= Variables[targets[targets.length-1]].length){
+                [targets,guess_numbs,guesses] = BackTrack(targets,guess_numbs,guesses,Variables)
+            }
+        }
+        return [targets,guess_numbs,guesses]
+    }
+
+    Variables['[1,1]'] = [5]
     Variables['[2,2]'] = [2]
-    //Variables['[3,3]'] = [3]
-    //Variables['[4,4]'] = [4]
-    revise(Constraints,Variables,'[1,1]','[2,2]')
-    AC3(Constraints,Variables)
-    UpdateBoard(Variables)
-    a =minimum_remaining_values(Constraints,Variables)
-    console.log(a)
+    Variables['[3,3]'] = [3]
+    Variables['[4,4]'] = [4]
+    
+    AC3(Constraints,Variables);
+    [Variables,targets,track_domain] = Solve(Constraints, Variables);
+    UpdateBoard(Variables);
+
     console.log(Variables)
 </script>
 </body>
